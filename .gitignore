@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# Data & Models (Large files)
+models/
+data/
+uploads/
+*.h5
+*.npy
+*.mp3
+*.wav
+
+# Node.js / Frontend
+node_modules/
+dist/
+.DS_Store

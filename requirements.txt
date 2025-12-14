@@ -1,0 +1,10 @@
+numpy
+matplotlib
+librosa
+tensorflow
+fastapi
+uvicorn
+python-multipart
+jupyter
+pandas
+tqdm
