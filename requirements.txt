@@ -2,9 +2,8 @@ numpy
 matplotlib
 librosa
 tensorflow
-fastapi
-uvicorn
-python-multipart
-jupyter
+flask
+flask-cors
+yt-dlp
 pandas
 tqdm

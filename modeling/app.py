@@ -9,7 +9,7 @@ import yt_dlp
 import uuid
 
 app = Flask(__name__)
-CORS(app) # React와 통신하기 위해 CORS 허용
+CORS(app)
 
 # 설정
 UPLOAD_FOLDER = 'c:/AI_PROJECT/uploads'
@@ -26,7 +26,7 @@ class_names = sorted([d for d in os.listdir(DATA_DIR) if os.path.isdir(os.path.j
 print(f"Model loaded. Classes: {len(class_names)}")
 
 def preprocess_audio_segment(y, sr):
-    """오디오 조각을 CQT 이미지로 변환"""
+    """오디오 세그먼트를 CQT 이미지로 변환"""
     target_frames = INPUT_SHAPE[1]
     hop_length = 512
     
@@ -44,18 +44,18 @@ def preprocess_audio_segment(y, sr):
     return C_db
 
 def analyze_audio_file(filepath):
-    """오디오 파일을 분석하여 코드 타임라인 반환"""
+    """오디오 파일 분석 및 코드 예측"""
     try:
         y, sr = librosa.load(filepath, sr=22050)
         duration = librosa.get_duration(y=y, sr=sr)
         
-        # 비트 트래킹
+        # 비트 트래킹 수행
         tempo, beat_frames = librosa.beat.beat_track(y=y, sr=sr)
         beat_times = librosa.frames_to_time(beat_frames, sr=sr)
         
         results = []
         
-        # 마디 단위 처리 (4비트 = 1마디 가정)
+        # 마디 단위 처리 (4비트 기준)
         beats_per_bar = 4
         
         # 비트가 너무 적으면 2초 단위로
@@ -79,7 +79,7 @@ def analyze_audio_file(filepath):
                     'chord': chord
                 })
         else:
-            # 비트 기반 마디 처리
+            # 비트 기반 세그먼테이션
             # 첫 마디 전(Intro) 처리
             if beat_times[0] > 0.5:
                  results.append({

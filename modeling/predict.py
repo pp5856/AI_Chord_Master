@@ -10,11 +10,11 @@ DATA_DIR = "c:/AI_PROJECT/data/processed"
 INPUT_SHAPE = (84, 84, 1)
 
 def get_class_names():
-    """데이터 폴더에서 클래스 이름들을 가져옵니다."""
+    """디렉토리에서 클래스 목록 로드"""
     return sorted([d for d in os.listdir(DATA_DIR) if os.path.isdir(os.path.join(DATA_DIR, d))])
 
 def preprocess_audio(file_path):
-    """오디오 파일을 모델이 이해할 수 있는 CQT 이미지로 변환합니다."""
+    """오디오 파일을 모델 입력용 CQT 이미지로 변환"""
     try:
         # 1. 오디오 로드
         y, sr = librosa.load(file_path, sr=22050)
@@ -48,7 +48,7 @@ def preprocess_audio(file_path):
         C_db = (C_db + 80.0) / 80.0 * 255.0
         
         # 7. 차원 추가 (Batch 차원 + Channel 차원)
-        # 모델은 (Batch, Height, Width, Channel) 형태를 원함 -> (1, 84, 84, 1)
+        # 배치 차원 추가 (N, H, W, C)
         C_db = C_db[..., np.newaxis]
         C_db = C_db[np.newaxis, ...] 
         
@@ -58,16 +58,16 @@ def preprocess_audio(file_path):
         return None
 
 def main():
-    # 1. 클래스 목록 가져오기
+    # 1. 클래스 목록 로드
     classes = get_class_names()
-    print(f"총 {len(classes)}개의 코드 클래스가 있습니다.")
+    print(f"총 {len(classes)}개 클래스 탐지")
     
     # 2. 모델 로드
-    print("모델을 불러오는 중...")
+    print("모델 로딩 중...")
     model = tf.keras.models.load_model(MODEL_PATH)
-    print("모델 로드 완료!")
+    print("모델 로드 완료")
     
-    # 3. 테스트할 파일 랜덤 선택
+    # 3. 테스트 파일 랜덤 선택
     true_label = random.choice(classes)
     class_dir = os.path.join(DATA_DIR, true_label)
     files = [f for f in os.listdir(class_dir) if f.endswith('.wav')]
@@ -90,20 +90,19 @@ def main():
     predictions = model.predict(input_data, verbose=0)
     
     # 6. 결과 분석
-    # 가장 확률이 높은 인덱스 찾기
     predicted_idx = np.argmax(predictions[0])
     predicted_label = classes[predicted_idx]
     confidence = predictions[0][predicted_idx] * 100
     
-    print(f"\n🤖 AI의 예측: **{predicted_label}** (확신: {confidence:.2f}%)")
-    print(f"✅ 정답: {true_label}")
+    print(f"\n[예측 결과]: {predicted_label} (확신도: {confidence:.2f}%)")
+    print(f"[정답]: {true_label}")
     
     if predicted_label == true_label:
-        print("\n🎉 정답입니다!")
+        print("결과: 정답")
     else:
-        print("\n😭 틀렸습니다...")
+        print("결과: 오답")
         
-    # Top 3 보여주기
+    # Top 3 후보 출력
     print("\n[Top 3 후보]")
     top_3_indices = np.argsort(predictions[0])[-3:][::-1]
     for idx in top_3_indices:

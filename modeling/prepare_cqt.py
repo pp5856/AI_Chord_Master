@@ -16,7 +16,7 @@ def process_file(args):
         # 1. 오디오 로드
         y, sr = librosa.load(file_path, sr=22050)
         
-        # 2. 길이 맞추기 (Padding/Cropping)
+        # 2. 길이 조정 (패딩/크롭)
         target_frames = INPUT_SHAPE[1]
         hop_length = 512
         required_samples = (target_frames - 1) * hop_length
@@ -26,16 +26,16 @@ def process_file(args):
         else:
             y = y[:required_samples + hop_length]
 
-        # 3. CQT 변환
+        # 3. CQT 변환 수행
         C = librosa.cqt(y, sr=sr, 
                        n_bins=INPUT_SHAPE[0], 
                        bins_per_octave=12, 
                        hop_length=hop_length)
         
-        # 4. dB 변환
+        # 4. 데시벨(dB) 스케일 변환
         C_db = librosa.amplitude_to_db(np.abs(C), ref=np.max)
         
-        # 5. 크기 맞추기 (Safety Check)
+        # 5. 크기 조정
         if C_db.shape[1] > target_frames:
             C_db = C_db[:, :target_frames]
         elif C_db.shape[1] < target_frames:
@@ -44,10 +44,10 @@ def process_file(args):
         # 6. 정규화 (0~255)
         C_db = (C_db + 80.0) / 80.0 * 255.0
         
-        # 7. 차원 추가 (84, 84, 1)
+        # 7. 채널 차원 추가
         C_db = C_db[..., np.newaxis]
         
-        # 8. 저장 (.npy)
+        # 8. .npy 파일 저장
         np.save(save_path, C_db.astype(np.float32))
         return True
         
@@ -61,10 +61,9 @@ def main():
         
     tasks = []
     
-    # 모든 클래스 폴더 순회
     classes = sorted([d for d in os.listdir(DATA_DIR) if os.path.isdir(os.path.join(DATA_DIR, d))])
     
-    print(f"총 {len(classes)}개 클래스를 처리합니다.")
+    print(f"총 {len(classes)}개 클래스 처리")
     
     for cls in classes:
         src_cls_dir = os.path.join(DATA_DIR, cls)
@@ -78,13 +77,13 @@ def main():
             src_path = os.path.join(src_cls_dir, f)
             dst_path = os.path.join(dst_cls_dir, f.replace('.wav', '.npy'))
             
-            # 이미 변환된 파일은 건너뛰기 (이어하기 기능)
+            # 이미 처리된 파일 스킵
             if not os.path.exists(dst_path):
                 tasks.append((src_path, dst_path))
     
     print(f"변환할 파일 개수: {len(tasks)}개")
     
-    # 병렬 처리 (CPU 코어 다 쓰기)
+    # 병렬 처리 수행
     with concurrent.futures.ProcessPoolExecutor() as executor:
         results = list(tqdm(executor.map(process_file, tasks), total=len(tasks), desc="CQT 변환 중"))
         
